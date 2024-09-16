@@ -1,96 +1,104 @@
-import React from 'react';
+// app/page.tsx
+"use client"
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
-const musicianName = "John Doe";
-const blogTitle = "John Doe's Music Journey";
-const postTitles = ["My Latest Album Release", "Behind the Scenes of My Music Video", "Upcoming Tour Dates"];
-const postContents = [
-  "I am thrilled to announce the release of my latest album. It has been a journey of creativity and hard work. I hope you all enjoy it!",
-  "Here's a sneak peek behind the scenes of my latest music video. It was an incredible experience working with such a talented team.",
-  "Excited to share my upcoming tour dates. Can't wait to see you all on the road!"
+// 背景画像のURL
+const backgroundImage = 'https://png.pngtree.com/thumb_back/fh260/background/20211014/pngtree-news-tv-broadcast-technology-background-image_909022.png';
+
+// ニュースの見出しと本文を最初に設定する
+const initialNews = [
+  { id: 1, title: 'Breaking News: Market Hits All-Time High', content: 'The stock market reaches an all-time high amid positive earnings reports.' },
+  { id: 2, title: 'Technology: AI Revolutionizing Healthcare', content: 'Artificial intelligence is rapidly transforming healthcare by providing accurate diagnostics and personalized treatments.' },
+  { id: 3, title: 'Environment: Global Climate Change Initiatives', content: 'Governments around the world are accelerating efforts to combat climate change.' }
 ];
-const buttonText = "Read More";
-const commentPlaceholder = "Leave a comment...";
-const submitButtonText = "Submit";
-const backgroundImageUrl = "https://thumb.ac-illust.com/06/068b034322e850492718389afb3a7a04_t.jpeg";
 
-export default function Blog() {
+export default function NewsPage() {
+  const [newsItems, setNewsItems] = useState(initialNews);
+  const [newTitle, setNewTitle] = useState('');
+  const [newContent, setNewContent] = useState('');
+
+  // ニュースを自動更新する関数（簡単なシミュレーション）
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newId = newsItems.length + 1;
+      const newNewsItem = {
+        id: newId,
+        title: `New Update ${newId}: Breaking News`,
+        content: `This is a simulated breaking news update #${newId}.`
+      };
+      setNewsItems(prevNews => [newNewsItem, ...prevNews]);
+    }, 5000); // 5秒ごとに新しいニュースを追加
+
+    return () => clearInterval(interval); // コンポーネントがアンマウントされたらタイマーをクリア
+  }, [newsItems]);
+
+  // 新しいニュースを追加するためのハンドラ
+  const addNewsItem = () => {
+    if (newTitle && newContent) {
+      const newId = newsItems.length + 1;
+      const newNewsItem = {
+        id: newId,
+        title: newTitle,
+        content: newContent
+      };
+      setNewsItems([newNewsItem, ...newsItems]);
+      setNewTitle('');
+      setNewContent('');
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-gray-100 p-8">
-      {/* 背景画像をぼやけさせるためのdiv */}
-      <div
-        className="absolute top-0 left-0 w-full h-full"
-        style={{
-          backgroundImage: `url(${backgroundImageUrl})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(8px)',
-          zIndex: -1, // 背景を後ろに配置
-        }}
-      ></div>
+    <div className="relative w-full min-h-screen bg-gray-800">
+      {/* 背景画像 */}
+      <div className="absolute inset-0">
+        <Image
+          src={backgroundImage}
+          alt="Background"
+          layout="fill"
+          objectFit="cover"
+          className="blur-md"
+        />
+      </div>
 
-      {/* コンテンツ */}
-      <div className="relative bg-white bg-opacity-80 p-8 rounded-lg">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold">{blogTitle}</h1>
-          <p className="text-xl text-gray-600">by {musicianName}</p>
-        </header>
-        <nav className="mb-8">
-          <ul className="flex justify-center space-x-4">
-            <li>
-              <a href="#" className="text-blue-500 hover:underline">
-                Home
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-500 hover:underline">
-                About
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-500 hover:underline">
-                Contact
-              </a>
-            </li>
-          </ul>
-        </nav>
-        <main className="max-w-4xl mx-auto">
-          {postTitles.map((title, index) => (
-            <Card key={index} className="mb-8">
+      {/* メインコンテンツ */}
+      <div className="relative z-10 p-6 space-y-6">
+        <h1 className="text-white text-4xl font-bold text-center">Latest News</h1>
+        
+        {/* ニュース入力フォーム */}
+        <div className="flex space-x-4 justify-center">
+          <Input 
+            className="w-1/4"
+            placeholder="Enter news title"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)} 
+          />
+          <Input 
+            className="w-1/2"
+            placeholder="Enter news content"
+            value={newContent}
+            onChange={(e) => setNewContent(e.target.value)} 
+          />
+          <Button onClick={addNewsItem}>Add News</Button>
+        </div>
+
+        {/* ニュース一覧 */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {newsItems.map(news => (
+            <Card key={news.id} className="bg-white/90">
               <CardHeader>
-                <h2 className="text-2xl font-semibold">{title}</h2>
+                <h2 className="text-lg font-semibold">{news.title}</h2>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700">{postContents[index]}</p>
-                <Button className="mt-4">{buttonText}</Button>
+                <p>{news.content}</p>
               </CardContent>
             </Card>
           ))}
-          <section className="mt-8">
-            <h3 className="text-xl font-semibold mb-4">Comments</h3>
-            <form className="mb-4">
-              <Textarea placeholder={commentPlaceholder} className="w-full mb-2" />
-              <Button>{submitButtonText}</Button>
-            </form>
-            <div>
-              <p className="text-gray-700">
-                <strong>Jane Smith:</strong> Love your new album!
-              </p>
-              <p className="text-gray-700">
-                <strong>Mike Johnson:</strong> Can't wait for the tour!
-              </p>
-            </div>
-          </section>
-        </main>
-        <footer className="text-center mt-8">
-          <p className="text-gray-600">© 2024 {musicianName}. All rights reserved.</p>
-        </footer>
+        </div>
       </div>
     </div>
   );
 }
-
-
