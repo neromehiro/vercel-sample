@@ -1,103 +1,101 @@
 // app/page.tsx
 "use client"
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Image from 'next/image';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react'; // ローディング用アイコン
 
-// 背景画像のURL
-const backgroundImage = 'https://png.pngtree.com/thumb_back/fh260/background/20211014/pngtree-news-tv-broadcast-technology-background-image_909022.png';
-
-// ニュースの見出しと本文を最初に設定する
-const initialNews = [
-  { id: 1, title: 'Breaking News: Market Hits All-Time High', content: 'The stock market reaches an all-time high amid positive earnings reports.' },
-  { id: 2, title: 'Technology: AI Revolutionizing Healthcare', content: 'Artificial intelligence is rapidly transforming healthcare by providing accurate diagnostics and personalized treatments.' },
-  { id: 3, title: 'Environment: Global Climate Change Initiatives', content: 'Governments around the world are accelerating efforts to combat climate change.' }
-];
+// NewsAPIのエンドポイントとAPIキー
+const API_URL = 'https://newsapi.org/v2/top-headlines';
+const API_KEY = 'YOUR_NEWSAPI_KEY'; // 自身のNewsAPIキーに差し替え
 
 export default function NewsPage() {
-  const [newsItems, setNewsItems] = useState(initialNews);
-  const [newTitle, setNewTitle] = useState('');
-  const [newContent, setNewContent] = useState('');
+  const [newsItems, setNewsItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // ニュースを自動更新する関数（簡単なシミュレーション）
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newId = newsItems.length + 1;
-      const newNewsItem = {
-        id: newId,
-        title: `New Update ${newId}: Breaking News`,
-        content: `This is a simulated breaking news update #${newId}.`
-      };
-      setNewsItems(prevNews => [newNewsItem, ...prevNews]);
-    }, 5000); // 5秒ごとに新しいニュースを追加
-
-    return () => clearInterval(interval); // コンポーネントがアンマウントされたらタイマーをクリア
-  }, [newsItems]);
-
-  // 新しいニュースを追加するためのハンドラ
-  const addNewsItem = () => {
-    if (newTitle && newContent) {
-      const newId = newsItems.length + 1;
-      const newNewsItem = {
-        id: newId,
-        title: newTitle,
-        content: newContent
-      };
-      setNewsItems([newNewsItem, ...newsItems]);
-      setNewTitle('');
-      setNewContent('');
+  // ニュースを取得する関数
+  const fetchNews = async () => {
+    try {
+      const response = await axios.get(API_URL, {
+        params: {
+          country: 'us', // 国を指定（'jp' で日本のニュースなど）
+          apiKey: API_KEY
+        }
+      });
+      setNewsItems(response.data.articles);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchNews();
+    const interval = setInterval(fetchNews, 60000); // 1分ごとにニュースを更新
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="relative w-full min-h-screen bg-gray-800">
+    <div className="relative w-full min-h-screen bg-gray-900">
       {/* 背景画像 */}
       <div className="absolute inset-0">
         <Image
-          src={backgroundImage}
+          src="https://png.pngtree.com/thumb_back/fh260/background/20211014/pngtree-news-tv-broadcast-technology-background-image_909022.png"
           alt="Background"
           layout="fill"
           objectFit="cover"
-          className="blur-md"
+          className="blur-md opacity-30"
         />
       </div>
 
-      {/* メインコンテンツ */}
+      {/* コンテンツ */}
       <div className="relative z-10 p-6 space-y-6">
         <h1 className="text-white text-4xl font-bold text-center">Latest News</h1>
-        
-        {/* ニュース入力フォーム */}
-        <div className="flex space-x-4 justify-center">
-          <Input 
-            className="w-1/4"
-            placeholder="Enter news title"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)} 
-          />
-          <Input 
-            className="w-1/2"
-            placeholder="Enter news content"
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)} 
-          />
-          <Button onClick={addNewsItem}>Add News</Button>
-        </div>
 
-        {/* ニュース一覧 */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {newsItems.map(news => (
-            <Card key={news.id} className="bg-white/90">
-              <CardHeader>
-                <h2 className="text-lg font-semibold">{news.title}</h2>
-              </CardHeader>
-              <CardContent>
-                <p>{news.content}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* ローディング中の表示 */}
+        {loading ? (
+          <div className="flex justify-center items-center">
+            <Loader2 className="animate-spin text-white w-12 h-12" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {newsItems.map((news, index) => (
+              <a
+                key={index}
+                href={news.url} // ニュース記事へのリンク
+                target="_blank" // 新しいタブで開く
+                rel="noopener noreferrer"
+                className="group"
+              >
+                <Card className="bg-white/90 group-hover:shadow-lg transform transition duration-200 ease-in-out">
+                  {news.urlToImage && (
+                    <div className="h-48 overflow-hidden rounded-t-md">
+                      <Image
+                        src={news.urlToImage}
+                        alt={news.title}
+                        width={600}
+                        height={300}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300 ease-in-out"
+                      />
+                    </div>
+                  )}
+                  <CardHeader className="p-4">
+                    <h2 className="text-lg font-semibold">{news.title}</h2>
+                    <p className="text-sm text-gray-500">
+                      {new Date(news.publishedAt).toLocaleDateString()}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <p className="text-gray-700 truncate">{news.description}</p>
+                  </CardContent>
+                </Card>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
