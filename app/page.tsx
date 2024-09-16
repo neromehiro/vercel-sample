@@ -1,109 +1,97 @@
 // app/page.tsx
-"use client";
+"use client"
+import React, { useState } from 'react';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { motion, AnimatePresence } from 'framer-motion';
 
-import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+// モチベーショナルタスクのリスト
+const defaultTasks = [
+  "Read a book for 30 minutes",
+  "Exercise for 15 minutes",
+  "Write down 3 things you're grateful for",
+  "Organize your workspace",
+  "Learn something new online",
+  "Reach out to a friend",
+  "Meditate for 10 minutes",
+  "Plan your next week"
+];
 
-export default function TodoApp() {
-  // 変数として文字列を扱う
-  const appTitle = "My Todo List App";
-  const addItemText = "Add Todo";
-  const inputPlaceholder = "Enter a new todo...";
-  const noTodoMessage = "No todos available";
-  const completeText = "Complete";
-  const removeText = "Remove";
+export default function Home() {
+  const [tasks, setTasks] = useState<string[]>(defaultTasks);
+  const [newTask, setNewTask] = useState<string>("");
 
-  // ステートの管理
-  const [todos, setTodos] = useState<{ text: string; completed: boolean }[]>([]);
-  const [newTodo, setNewTodo] = useState<string>("");
-
-  // 初期化時にlocalStorageからデータを読み込む
-  useEffect(() => {
-    const storedTodos = localStorage.getItem("todos");
-    if (storedTodos) {
-      setTodos(JSON.parse(storedTodos));
-    }
-  }, []);
-
-  // todosが変更されるたびにlocalStorageに保存
-  useEffect(() => {
-    if (todos.length > 0) {
-      localStorage.setItem("todos", JSON.stringify(todos));
-    } else {
-      localStorage.removeItem("todos"); // 空の場合は削除
-    }
-  }, [todos]);
-
-  // 新しいTodoを追加する関数
-  const addTodo = () => {
-    if (newTodo.trim() !== "") {
-      setTodos([...todos, { text: newTodo, completed: false }]);
-      setNewTodo("");
+  // タスクを追加する関数
+  const addTask = () => {
+    if (newTask) {
+      setTasks([...tasks, newTask]);
+      setNewTask(""); // 入力フィールドをクリア
     }
   };
 
-  // Todoの完了ステータスを切り替える関数
-  const toggleComplete = (index: number) => {
-    const updatedTodos = todos.map((todo, i) =>
-      i === index ? { ...todo, completed: !todo.completed } : todo
-    );
-    setTodos(updatedTodos);
+  // タスクの削除
+  const deleteTask = (taskToDelete: string) => {
+    setTasks(tasks.filter(task => task !== taskToDelete));
   };
 
-  // Todoを削除する関数
-  const removeTodo = (index: number) => {
-    const updatedTodos = todos.filter((_, i) => i !== index);
-    setTodos(updatedTodos);
+  // ランダムタスクジェネレーター
+  const generateRandomTask = () => {
+    const randomTask = defaultTasks[Math.floor(Math.random() * defaultTasks.length)];
+    setTasks([...tasks, randomTask]);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md shadow-md bg-white">
         <CardHeader>
-          <h1 className="text-2xl font-bold text-center">{appTitle}</h1>
+          <h2 className="text-xl font-bold text-center">Daily ToDo Generator</h2>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-2 mb-4">
-            <Input
-              placeholder={inputPlaceholder}
-              value={newTodo}
-              onChange={(e) => setNewTodo(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={addTodo}>{addItemText}</Button>
-          </div>
-          {todos.length === 0 ? (
-            <p className="text-center text-gray-500">{noTodoMessage}</p>
-          ) : (
-            <ul className="space-y-2">
-              {todos.map((todo, index) => (
-                <li
-                  key={index}
-                  className={`flex items-center justify-between p-2 border rounded-lg ${
-                    todo.completed ? "bg-green-100" : "bg-red-100"
-                  }`}
-                >
-                  <span
-                    className={`flex-1 ${
-                      todo.completed ? "line-through text-gray-500" : ""
-                    }`}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">Your Tasks:</h3>
+            <ul>
+              <AnimatePresence>
+                {tasks.map((task, index) => (
+                  <motion.li
+                    key={task}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex items-center justify-between mb-2"
                   >
-                    {todo.text}
-                  </span>
-                  <div className="space-x-2">
-                    <Button onClick={() => toggleComplete(index)}>
-                      {completeText}
+                    <div className="flex items-center">
+                      <Checkbox className="mr-2" />
+                      <span>{task}</span>
+                    </div>
+                    <Button
+                      onClick={() => deleteTask(task)}
+                      variant="ghost"
+                      className="text-red-500"
+                    >
+                      Delete
                     </Button>
-                    <Button onClick={() => removeTodo(index)} variant="destructive">
-                      {removeText}
-                    </Button>
-                  </div>
-                </li>
-              ))}
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
-          )}
+          </div>
+          <div className="flex mb-4">
+            <Input
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              placeholder="Add a new task"
+              className="mr-2"
+            />
+            <Button onClick={addTask} className="bg-green-500 hover:bg-green-700 text-white">
+              Add
+            </Button>
+          </div>
+          <Button onClick={generateRandomTask} className="bg-blue-500 hover:bg-blue-700 text-white w-full">
+            Generate Random Task
+          </Button>
         </CardContent>
       </Card>
     </div>
