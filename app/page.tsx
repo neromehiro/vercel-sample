@@ -1,96 +1,272 @@
-import React from 'react';
+"use client"
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { motion } from 'framer-motion';
+import { AlertCircle, Check } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const musicianName = "John Doe";
-const blogTitle = "John Doe's Music Journey";
-const postTitles = ["My Latest Album Release", "Behind the Scenes of My Music Video", "Upcoming Tour Dates"];
-const postContents = [
-  "I am thrilled to announce the release of my latest album. It has been a journey of creativity and hard work. I hope you all enjoy it!",
-  "Here's a sneak peek behind the scenes of my latest music video. It was an incredible experience working with such a talented team.",
-  "Excited to share my upcoming tour dates. Can't wait to see you all on the road!"
-];
-const buttonText = "Read More";
-const commentPlaceholder = "Leave a comment...";
-const submitButtonText = "Submit";
-const backgroundImageUrl = "https://thumb.ac-illust.com/06/068b034322e850492718389afb3a7a04_t.jpeg";
+const initialVariables = {
+  a: 0,
+  b: 0,
+  c: 0,
+  x: 0,
+  y: 0,
+};
 
-export default function Blog() {
+type Operation = '+' | '-' | '*' | '/' | '^' | 'sqrt' | 'sin' | 'cos' | 'tan' | 'log';
+
+const Calculator: React.FC = () => {
+  const [display, setDisplay] = useState<string>('');
+  const [variables, setVariables] = useState(initialVariables);
+  const [history, setHistory] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem('calculatorHistory');
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('calculatorHistory', JSON.stringify(history));
+  }, [history]);
+
+  const handleVariableChange = (variable: keyof typeof initialVariables, value: string) => {
+    setVariables(prev => ({ ...prev, [variable]: parseFloat(value) || 0 }));
+  };
+
+  const appendToDisplay = (value: string) => {
+    setDisplay(prev => prev + value);
+  };
+
+  const clearDisplay = () => {
+    setDisplay('');
+    setError(null);
+    setSuccess(null);
+  };
+
+  const calculateResult = () => {
+    try {
+      const result = evaluateExpression(display);
+      setDisplay(result.toString());
+      setHistory(prev => [...prev, `${display} = ${result}`]);
+      setSuccess('計算が成功しました！');
+      setError(null);
+    } catch (err) {
+      setError('計算エラー: ' + (err as Error).message);
+      setSuccess(null);
+    }
+  };
+
+  const evaluateExpression = (expr: string): number => {
+    const tokens = tokenize(expr);
+    const postfix = infixToPostfix(tokens);
+    return evaluatePostfix(postfix);
+  };
+
+  const tokenize = (expr: string): (string | number)[] => {
+    const regex = /([a-z]+|\d+|\S)/g;
+    return expr.match(regex)?.map(token => {
+      if (token in variables) {
+        return variables[token as keyof typeof variables];
+      }
+      return isNaN(Number(token)) ? token : Number(token);
+    }) || [];
+  };
+
+  const precedence = (op: string): number => {
+    switch (op) {
+      case '+':
+      case '-':
+        return 1;
+      case '*':
+      case '/':
+        return 2;
+      case '^':
+        return 3;
+      default:
+        return 0;
+    }
+  };
+
+  const infixToPostfix = (tokens: (string | number)[]): (string | number)[] => {
+    const output: (string | number)[] = [];
+    const operators: string[] = [];
+
+    for (const token of tokens) {
+      if (typeof token === 'number') {
+        output.push(token);
+      } else if (token === '(') {
+        operators.push(token);
+      } else if (token === ')') {
+        while (operators.length && operators[operators.length - 1] !== '(') {
+          output.push(operators.pop()!);
+        }
+        operators.pop(); // Remove '('
+      } else {
+        while (
+          operators.length &&
+          precedence(operators[operators.length - 1]) >= precedence(token as string)
+        ) {
+          output.push(operators.pop()!);
+        }
+        operators.push(token as string);
+      }
+    }
+
+    while (operators.length) {
+      output.push(operators.pop()!);
+    }
+
+    return output;
+  };
+
+  const evaluatePostfix = (postfix: (string | number)[]): number => {
+    const stack: number[] = [];
+
+    for (const token of postfix) {
+      if (typeof token === 'number') {
+        stack.push(token);
+      } else {
+        const b = stack.pop()!;
+        const a = token === 'sqrt' || token === 'sin' || token === 'cos' || token === 'tan' || token === 'log' ? 0 : stack.pop()!;
+        stack.push(applyOperation(token as Operation, a, b));
+      }
+    }
+
+    return stack[0];
+  };
+
+  const applyOperation = (op: Operation, a: number, b: number): number => {
+    switch (op) {
+      case '+': return a + b;
+      case '-': return a - b;
+      case '*': return a * b;
+      case '/':
+        if (b === 0) throw new Error('0で割ることはできません');
+        return a / b;
+      case '^': return Math.pow(a, b);
+      case 'sqrt': return Math.sqrt(b);
+      case 'sin': return Math.sin(b);
+      case 'cos': return Math.cos(b);
+      case 'tan': return Math.tan(b);
+      case 'log': return Math.log(b);
+      default: throw new Error('不明な演算子');
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-gray-100 p-8">
-      {/* 背景画像をぼやけさせるためのdiv */}
-      <div
-        className="absolute top-0 left-0 w-full h-full"
-        style={{
-          backgroundImage: `url(${backgroundImageUrl})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'blur(8px)',
-          zIndex: -1, // 背景を後ろに配置
-        }}
-      ></div>
-
-      {/* コンテンツ */}
-      <div className="relative bg-white bg-opacity-80 p-8 rounded-lg">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold">{blogTitle}</h1>
-          <p className="text-xl text-gray-600">by {musicianName}</p>
-        </header>
-        <nav className="mb-8">
-          <ul className="flex justify-center space-x-4">
-            <li>
-              <a href="#" className="text-blue-500 hover:underline">
-                Home
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-500 hover:underline">
-                About
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-blue-500 hover:underline">
-                Contact
-              </a>
-            </li>
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <h2 className="text-2xl font-bold text-center">関数電卓</h2>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <Input
+            type="text"
+            value={display}
+            readOnly
+            className="text-right text-lg font-mono p-2 w-full"
+          />
+          <div className="grid grid-cols-4 gap-2">
+            {Object.keys(variables).map((variable) => (
+              <Input
+                key={variable}
+                type="number"
+                placeholder={variable}
+                value={variables[variable as keyof typeof variables]}
+                onChange={(e) => handleVariableChange(variable as keyof typeof variables, e.target.value)}
+                className="text-center"
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['7', '8', '9', '/'].map((btn) => (
+              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['4', '5', '6', '*'].map((btn) => (
+              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['1', '2', '3', '-'].map((btn) => (
+              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['0', '.', '=', '+'].map((btn) => (
+              <Button
+                key={btn}
+                onClick={() => btn === '=' ? calculateResult() : appendToDisplay(btn)}
+              >
+                {btn}
+              </Button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['(', ')', '^', 'sqrt'].map((btn) => (
+              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['sin', 'cos', 'tan', 'log'].map((btn) => (
+              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
+            ))}
+          </div>
+          <Button onClick={clearDisplay} className="w-full">クリア</Button>
+        </div>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>エラー</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Alert variant="default" className="mt-4 bg-green-100">
+              <Check className="h-4 w-4" />
+              <AlertTitle>成功</AlertTitle>
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold mb-2">計算履歴</h3>
+          <ul className="space-y-1">
+            {history.slice(-5).map((item, index) => (
+              <motion.li
+                key={index}
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="text-sm text-gray-600"
+              >
+                {item}
+              </motion.li>
+            ))}
           </ul>
-        </nav>
-        <main className="max-w-4xl mx-auto">
-          {postTitles.map((title, index) => (
-            <Card key={index} className="mb-8">
-              <CardHeader>
-                <h2 className="text-2xl font-semibold">{title}</h2>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{postContents[index]}</p>
-                <Button className="mt-4">{buttonText}</Button>
-              </CardContent>
-            </Card>
-          ))}
-          <section className="mt-8">
-            <h3 className="text-xl font-semibold mb-4">Comments</h3>
-            <form className="mb-4">
-              <Textarea placeholder={commentPlaceholder} className="w-full mb-2" />
-              <Button>{submitButtonText}</Button>
-            </form>
-            <div>
-              <p className="text-gray-700">
-                <strong>Jane Smith:</strong> Love your new album!
-              </p>
-              <p className="text-gray-700">
-                <strong>Mike Johnson:</strong> Can't wait for the tour!
-              </p>
-            </div>
-          </section>
-        </main>
-        <footer className="text-center mt-8">
-          <p className="text-gray-600">© 2024 {musicianName}. All rights reserved.</p>
-        </footer>
-      </div>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
 
-
+export default Calculator;
