@@ -1,272 +1,138 @@
-"use client"
+// app/page.tsx
+"use client";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { motion } from 'framer-motion';
-import { AlertCircle, Check } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+const initialDisplayValue = "0";
 
-const initialVariables = {
-  a: 0,
-  b: 0,
-  c: 0,
-  x: 0,
-  y: 0,
-};
+const App = () => {
+  const [displayValue, setDisplayValue] = useState(initialDisplayValue);
+  const [operator, setOperator] = useState<string | null>(null);
+  const [firstOperand, setFirstOperand] = useState<string | null>(null);
+  const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
 
-type Operation = '+' | '-' | '*' | '/' | '^' | 'sqrt' | 'sin' | 'cos' | 'tan' | 'log';
-
-const Calculator: React.FC = () => {
-  const [display, setDisplay] = useState<string>('');
-  const [variables, setVariables] = useState(initialVariables);
-  const [history, setHistory] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    const storedHistory = localStorage.getItem('calculatorHistory');
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('calculatorHistory', JSON.stringify(history));
-  }, [history]);
-
-  const handleVariableChange = (variable: keyof typeof initialVariables, value: string) => {
-    setVariables(prev => ({ ...prev, [variable]: parseFloat(value) || 0 }));
-  };
-
-  const appendToDisplay = (value: string) => {
-    setDisplay(prev => prev + value);
-  };
-
-  const clearDisplay = () => {
-    setDisplay('');
-    setError(null);
-    setSuccess(null);
-  };
-
-  const calculateResult = () => {
-    try {
-      const result = evaluateExpression(display);
-      setDisplay(result.toString());
-      setHistory(prev => [...prev, `${display} = ${result}`]);
-      setSuccess('計算が成功しました！');
-      setError(null);
-    } catch (err) {
-      setError('計算エラー: ' + (err as Error).message);
-      setSuccess(null);
+  const handleButtonClick = (value: string) => {
+    if (waitingForSecondOperand) {
+      setDisplayValue(value);
+      setWaitingForSecondOperand(false);
+    } else {
+      setDisplayValue((prevValue) =>
+        prevValue === initialDisplayValue ? value : prevValue + value
+      );
     }
   };
 
-  const evaluateExpression = (expr: string): number => {
-    const tokens = tokenize(expr);
-    const postfix = infixToPostfix(tokens);
-    return evaluatePostfix(postfix);
+  const handleOperatorClick = (nextOperator: string) => {
+    const inputValue = parseFloat(displayValue);
+
+    if (firstOperand === null) {
+      setFirstOperand(inputValue.toString());
+    } else if (operator) {
+      const result = calculate(firstOperand, inputValue.toString(), operator);
+      setDisplayValue(result);
+      setFirstOperand(result);
+    }
+
+    setWaitingForSecondOperand(true);
+    setOperator(nextOperator);
   };
 
-  const tokenize = (expr: string): (string | number)[] => {
-    const regex = /([a-z]+|\d+|\S)/g;
-    return expr.match(regex)?.map(token => {
-      if (token in variables) {
-        return variables[token as keyof typeof variables];
-      }
-      return isNaN(Number(token)) ? token : Number(token);
-    }) || [];
+  const calculate = (firstOperand: string, secondOperand: string, operator: string) => {
+    const first = parseFloat(firstOperand);
+    const second = parseFloat(secondOperand);
+
+    if (operator === "+") return (first + second).toString();
+    if (operator === "-") return (first - second).toString();
+    if (operator === "*") return (first * second).toString();
+    if (operator === "/") return second === 0 ? "Error" : (first / second).toString();
+    return secondOperand;
   };
 
-  const precedence = (op: string): number => {
-    switch (op) {
-      case '+':
-      case '-':
-        return 1;
-      case '*':
-      case '/':
-        return 2;
-      case '^':
-        return 3;
-      default:
-        return 0;
+  const handleEqualClick = () => {
+    const inputValue = parseFloat(displayValue);
+
+    if (operator && firstOperand) {
+      const result = calculate(firstOperand, inputValue.toString(), operator);
+      setDisplayValue(result);
+      setFirstOperand(null);
+      setOperator(null);
     }
   };
 
-  const infixToPostfix = (tokens: (string | number)[]): (string | number)[] => {
-    const output: (string | number)[] = [];
-    const operators: string[] = [];
-
-    for (const token of tokens) {
-      if (typeof token === 'number') {
-        output.push(token);
-      } else if (token === '(') {
-        operators.push(token);
-      } else if (token === ')') {
-        while (operators.length && operators[operators.length - 1] !== '(') {
-          output.push(operators.pop()!);
-        }
-        operators.pop(); // Remove '('
-      } else {
-        while (
-          operators.length &&
-          precedence(operators[operators.length - 1]) >= precedence(token as string)
-        ) {
-          output.push(operators.pop()!);
-        }
-        operators.push(token as string);
-      }
-    }
-
-    while (operators.length) {
-      output.push(operators.pop()!);
-    }
-
-    return output;
+  const handleClearClick = () => {
+    setDisplayValue(initialDisplayValue);
+    setFirstOperand(null);
+    setOperator(null);
+    setWaitingForSecondOperand(false);
   };
 
-  const evaluatePostfix = (postfix: (string | number)[]): number => {
-    const stack: number[] = [];
-
-    for (const token of postfix) {
-      if (typeof token === 'number') {
-        stack.push(token);
-      } else {
-        const b = stack.pop()!;
-        const a = token === 'sqrt' || token === 'sin' || token === 'cos' || token === 'tan' || token === 'log' ? 0 : stack.pop()!;
-        stack.push(applyOperation(token as Operation, a, b));
-      }
-    }
-
-    return stack[0];
-  };
-
-  const applyOperation = (op: Operation, a: number, b: number): number => {
-    switch (op) {
-      case '+': return a + b;
-      case '-': return a - b;
-      case '*': return a * b;
-      case '/':
-        if (b === 0) throw new Error('0で割ることはできません');
-        return a / b;
-      case '^': return Math.pow(a, b);
-      case 'sqrt': return Math.sqrt(b);
-      case 'sin': return Math.sin(b);
-      case 'cos': return Math.cos(b);
-      case 'tan': return Math.tan(b);
-      case 'log': return Math.log(b);
-      default: throw new Error('不明な演算子');
-    }
-  };
+  const renderButton = (value: string, onClick: () => void) => (
+    <motion.div
+      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.1 }}
+      className="flex justify-center items-center m-1 p-4 bg-gray-200 rounded-lg"
+    >
+      <Button variant="outline" onClick={onClick}>
+        {value}
+      </Button>
+    </motion.div>
+  );
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <h2 className="text-2xl font-bold text-center">関数電卓</h2>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <Input
-            type="text"
-            value={display}
-            readOnly
-            className="text-right text-lg font-mono p-2 w-full"
-          />
-          <div className="grid grid-cols-4 gap-2">
-            {Object.keys(variables).map((variable) => (
-              <Input
-                key={variable}
-                type="number"
-                placeholder={variable}
-                value={variables[variable as keyof typeof variables]}
-                onChange={(e) => handleVariableChange(variable as keyof typeof variables, e.target.value)}
-                className="text-center"
-              />
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {['7', '8', '9', '/'].map((btn) => (
-              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {['4', '5', '6', '*'].map((btn) => (
-              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {['1', '2', '3', '-'].map((btn) => (
-              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {['0', '.', '=', '+'].map((btn) => (
-              <Button
-                key={btn}
-                onClick={() => btn === '=' ? calculateResult() : appendToDisplay(btn)}
-              >
-                {btn}
-              </Button>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {['(', ')', '^', 'sqrt'].map((btn) => (
-              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {['sin', 'cos', 'tan', 'log'].map((btn) => (
-              <Button key={btn} onClick={() => appendToDisplay(btn)}>{btn}</Button>
-            ))}
-          </div>
-          <Button onClick={clearDisplay} className="w-full">クリア</Button>
-        </div>
-        {error && (
+    <div className="flex h-screen items-center justify-center bg-gray-50">
+      <Card className="p-6 w-96 shadow-lg bg-white">
+        <CardHeader>
           <motion.div
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="text-center text-2xl font-bold"
           >
-            <Alert variant="destructive" className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>エラー</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            Calculator
           </motion.div>
-        )}
-        {success && (
+        </CardHeader>
+        <CardContent>
           <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
+            className="mb-4"
           >
-            <Alert variant="default" className="mt-4 bg-green-100">
-              <Check className="h-4 w-4" />
-              <AlertTitle>成功</AlertTitle>
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
+            <Input
+              type="text"
+              value={displayValue}
+              readOnly
+              className="text-right text-xl py-2 px-4 border rounded-lg w-full"
+            />
           </motion.div>
-        )}
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold mb-2">計算履歴</h3>
-          <ul className="space-y-1">
-            {history.slice(-5).map((item, index) => (
-              <motion.li
-                key={index}
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="text-sm text-gray-600"
-              >
-                {item}
-              </motion.li>
-            ))}
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="grid grid-cols-4 gap-2">
+            {renderButton("7", () => handleButtonClick("7"))}
+            {renderButton("8", () => handleButtonClick("8"))}
+            {renderButton("9", () => handleButtonClick("9"))}
+            {renderButton("/", () => handleOperatorClick("/"))}
+
+            {renderButton("4", () => handleButtonClick("4"))}
+            {renderButton("5", () => handleButtonClick("5"))}
+            {renderButton("6", () => handleButtonClick("6"))}
+            {renderButton("*", () => handleOperatorClick("*"))}
+
+            {renderButton("1", () => handleButtonClick("1"))}
+            {renderButton("2", () => handleButtonClick("2"))}
+            {renderButton("3", () => handleButtonClick("3"))}
+            {renderButton("-", () => handleOperatorClick("-"))}
+
+            {renderButton("0", () => handleButtonClick("0"))}
+            {renderButton("C", handleClearClick)}
+            {renderButton("=", handleEqualClick)}
+            {renderButton("+", () => handleOperatorClick("+"))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-export default Calculator;
+export default App;
