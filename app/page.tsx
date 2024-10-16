@@ -1,108 +1,138 @@
 // app/page.tsx
-"use client"
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+"use client";
 
-const profileData = {
-  name: "山田 太郎",
-  profession: "フロントエンド エンジニア",
-  bio: "プログラミングの魅力を伝えるクリエイター。初心者向けのチュートリアルを提供し、日々技術を追求。",
-  skills: ["JavaScript", "React", "Next.js", "Tailwind CSS", "TypeScript"],
-  projects: [
-    { title: "ポートフォリオサイト", description: "個人のポートフォリオを動的に作成" },
-    { title: "Todo アプリ", description: "React Hooks を使ったシンプルな Todo アプリ" },
-    { title: "ブログ", description: "Next.js で構築されたブログプラットフォーム" },
-  ]
-};
+import React, { useState } from "react";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
 
-export default function HomePage() {
-  const [showDetails, setShowDetails] = useState(false);
+// 画像のURLを直接指定
+const flowerPatternBg = "bg-[url('https://photo-chips.com/user_data/00013247_541528.jpg')]";
+const mainTitle = "こんにちは！お花屋さんの田中です！";
+const introductionText = "私はお花屋を運営しています。";
+const aboutMeText = "私はお花屋さんを運営すると同時に、webの開発者でもあります。";
 
-  const handleToggleDetails = () => {
-    setShowDetails(prev => !prev);
+export default function PortfolioPage() {
+  const [contactInfo, setContactInfo] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setContactInfo({ ...contactInfo, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = () => {
+    alert("Your message has been submitted!");
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <motion.div
-        className="max-w-3xl w-full bg-white shadow-lg rounded-lg overflow-hidden"
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card>
+    <div className={`min-h-screen p-10 ${flowerPatternBg} bg-cover bg-center`}>
+      {/* Header Section */}
+      <header className="text-center mb-10">
+        <h1 className="text-5xl font-bold text-pink-500 animate-bounce">
+          {mainTitle}
+        </h1>
+        <p className="text-xl mt-4 text-gray-700">{introductionText}</p>
+      </header>
+
+      {/* About Me Section */}
+      <section className="mb-16">
+        <Card className="max-w-3xl mx-auto shadow-lg">
           <CardHeader>
-            <motion.h1
-              className="text-3xl font-bold text-center"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              {profileData.name}
-            </motion.h1>
-            <motion.h2
-              className="text-xl text-center text-gray-500 mt-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              {profileData.profession}
-            </motion.h2>
+            <h2 className="text-3xl font-semibold text-pink-600">About Me</h2>
           </CardHeader>
           <CardContent>
-            <motion.p
-              className="text-center text-gray-700 mb-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-            >
-              {profileData.bio}
-            </motion.p>
-            <div className="flex justify-center mb-4">
-              <Button onClick={handleToggleDetails} className="bg-blue-500 text-white">
-                {showDetails ? "詳細を非表示" : "詳細を表示"}
-              </Button>
-            </div>
-            {showDetails && (
-              <motion.div
-                className="mt-4"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h3 className="text-lg font-bold mb-2">スキル:</h3>
-                <ul className="list-disc list-inside">
-                  {profileData.skills.map((skill, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: -50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      {skill}
-                    </motion.li>
-                  ))}
-                </ul>
-                <h3 className="text-lg font-bold mt-4 mb-2">プロジェクト:</h3>
-                <ul className="list-disc list-inside">
-                  {profileData.projects.map((project, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <strong>{project.title}:</strong> {project.description}
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
+            <p className="text-lg text-gray-600">{aboutMeText}</p>
           </CardContent>
         </Card>
-      </motion.div>
+      </section>
+
+      {/* Portfolio Section */}
+      <section className="mb-16">
+        <Card className="max-w-3xl mx-auto shadow-lg">
+          <CardHeader>
+            <h2 className="text-3xl font-semibold text-pink-600">My Work</h2>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg"
+            >
+              <h3 className="text-xl font-semibold mb-2">Project 1</h3>
+              <p className="text-gray-600">
+                A description of the first project goes here.
+              </p>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg"
+            >
+              <h3 className="text-xl font-semibold mb-2">Project 2</h3>
+              <p className="text-gray-600">
+                A description of the second project goes here.
+              </p>
+            </motion.div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Contact Form */}
+      <section>
+        <Card className="max-w-3xl mx-auto shadow-lg">
+          <CardHeader>
+            <h2 className="text-3xl font-semibold text-pink-600">Contact Me</h2>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-6">
+              <div>
+                <label htmlFor="name" className="block text-lg text-gray-600">
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={contactInfo.name}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-lg text-gray-600">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={contactInfo.email}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="message" className="block text-lg text-gray-600">
+                  Message
+                </label>
+                <Input
+                  id="message"
+                  name="message"
+                  type="text"
+                  value={contactInfo.message}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full"
+                />
+              </div>
+              <Button onClick={handleSubmit} className="bg-pink-500 w-full">
+                Submit
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }
