@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 
 const profileData = {
   name: "山田 太郎",
@@ -20,16 +19,9 @@ const profileData = {
 
 export default function HomePage() {
   const [showDetails, setShowDetails] = useState(false);
-  const { toast } = useToast();
 
   const handleToggleDetails = () => {
     setShowDetails(prev => !prev);
-    toast({
-      title: showDetails ? "詳細を非表示" : "詳細を表示",
-      description: showDetails
-        ? "プロフィールの詳細を隠しました。"
-        : "プロフィールの詳細を表示しています。",
-    });
   };
 
   return (
