@@ -1,138 +1,116 @@
 // app/page.tsx
-"use client";
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+"use client"
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
-const initialDisplayValue = "0";
-
-const App = () => {
-  const [displayValue, setDisplayValue] = useState(initialDisplayValue);
-  const [operator, setOperator] = useState<string | null>(null);
-  const [firstOperand, setFirstOperand] = useState<string | null>(null);
-  const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
-
-  const handleButtonClick = (value: string) => {
-    if (waitingForSecondOperand) {
-      setDisplayValue(value);
-      setWaitingForSecondOperand(false);
-    } else {
-      setDisplayValue((prevValue) =>
-        prevValue === initialDisplayValue ? value : prevValue + value
-      );
-    }
-  };
-
-  const handleOperatorClick = (nextOperator: string) => {
-    const inputValue = parseFloat(displayValue);
-
-    if (firstOperand === null) {
-      setFirstOperand(inputValue.toString());
-    } else if (operator) {
-      const result = calculate(firstOperand, inputValue.toString(), operator);
-      setDisplayValue(result);
-      setFirstOperand(result);
-    }
-
-    setWaitingForSecondOperand(true);
-    setOperator(nextOperator);
-  };
-
-  const calculate = (firstOperand: string, secondOperand: string, operator: string) => {
-    const first = parseFloat(firstOperand);
-    const second = parseFloat(secondOperand);
-
-    if (operator === "+") return (first + second).toString();
-    if (operator === "-") return (first - second).toString();
-    if (operator === "*") return (first * second).toString();
-    if (operator === "/") return second === 0 ? "Error" : (first / second).toString();
-    return secondOperand;
-  };
-
-  const handleEqualClick = () => {
-    const inputValue = parseFloat(displayValue);
-
-    if (operator && firstOperand) {
-      const result = calculate(firstOperand, inputValue.toString(), operator);
-      setDisplayValue(result);
-      setFirstOperand(null);
-      setOperator(null);
-    }
-  };
-
-  const handleClearClick = () => {
-    setDisplayValue(initialDisplayValue);
-    setFirstOperand(null);
-    setOperator(null);
-    setWaitingForSecondOperand(false);
-  };
-
-  const renderButton = (value: string, onClick: () => void) => (
-    <motion.div
-      whileTap={{ scale: 0.9 }}
-      whileHover={{ scale: 1.1 }}
-      className="flex justify-center items-center m-1 p-4 bg-gray-200 rounded-lg"
-    >
-      <Button variant="outline" onClick={onClick}>
-        {value}
-      </Button>
-    </motion.div>
-  );
-
-  return (
-    <div className="flex h-screen items-center justify-center bg-gray-50">
-      <Card className="p-6 w-96 shadow-lg bg-white">
-        <CardHeader>
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center text-2xl font-bold"
-          >
-            Calculator
-          </motion.div>
-        </CardHeader>
-        <CardContent>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mb-4"
-          >
-            <Input
-              type="text"
-              value={displayValue}
-              readOnly
-              className="text-right text-xl py-2 px-4 border rounded-lg w-full"
-            />
-          </motion.div>
-          <div className="grid grid-cols-4 gap-2">
-            {renderButton("7", () => handleButtonClick("7"))}
-            {renderButton("8", () => handleButtonClick("8"))}
-            {renderButton("9", () => handleButtonClick("9"))}
-            {renderButton("/", () => handleOperatorClick("/"))}
-
-            {renderButton("4", () => handleButtonClick("4"))}
-            {renderButton("5", () => handleButtonClick("5"))}
-            {renderButton("6", () => handleButtonClick("6"))}
-            {renderButton("*", () => handleOperatorClick("*"))}
-
-            {renderButton("1", () => handleButtonClick("1"))}
-            {renderButton("2", () => handleButtonClick("2"))}
-            {renderButton("3", () => handleButtonClick("3"))}
-            {renderButton("-", () => handleOperatorClick("-"))}
-
-            {renderButton("0", () => handleButtonClick("0"))}
-            {renderButton("C", handleClearClick)}
-            {renderButton("=", handleEqualClick)}
-            {renderButton("+", () => handleOperatorClick("+"))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+const profileData = {
+  name: "山田 太郎",
+  profession: "フロントエンド エンジニア",
+  bio: "プログラミングの魅力を伝えるクリエイター。初心者向けのチュートリアルを提供し、日々技術を追求。",
+  skills: ["JavaScript", "React", "Next.js", "Tailwind CSS", "TypeScript"],
+  projects: [
+    { title: "ポートフォリオサイト", description: "個人のポートフォリオを動的に作成" },
+    { title: "Todo アプリ", description: "React Hooks を使ったシンプルな Todo アプリ" },
+    { title: "ブログ", description: "Next.js で構築されたブログプラットフォーム" },
+  ]
 };
 
-export default App;
+export default function HomePage() {
+  const [showDetails, setShowDetails] = useState(false);
+  const { toast } = useToast();
+
+  const handleToggleDetails = () => {
+    setShowDetails(prev => !prev);
+    toast({
+      title: showDetails ? "詳細を非表示" : "詳細を表示",
+      description: showDetails
+        ? "プロフィールの詳細を隠しました。"
+        : "プロフィールの詳細を表示しています。",
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      <motion.div
+        className="max-w-3xl w-full bg-white shadow-lg rounded-lg overflow-hidden"
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card>
+          <CardHeader>
+            <motion.h1
+              className="text-3xl font-bold text-center"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              {profileData.name}
+            </motion.h1>
+            <motion.h2
+              className="text-xl text-center text-gray-500 mt-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              {profileData.profession}
+            </motion.h2>
+          </CardHeader>
+          <CardContent>
+            <motion.p
+              className="text-center text-gray-700 mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              {profileData.bio}
+            </motion.p>
+            <div className="flex justify-center mb-4">
+              <Button onClick={handleToggleDetails} className="bg-blue-500 text-white">
+                {showDetails ? "詳細を非表示" : "詳細を表示"}
+              </Button>
+            </div>
+            {showDetails && (
+              <motion.div
+                className="mt-4"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h3 className="text-lg font-bold mb-2">スキル:</h3>
+                <ul className="list-disc list-inside">
+                  {profileData.skills.map((skill, index) => (
+                    <motion.li
+                      key={index}
+                      initial={{ opacity: 0, x: -50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      {skill}
+                    </motion.li>
+                  ))}
+                </ul>
+                <h3 className="text-lg font-bold mt-4 mb-2">プロジェクト:</h3>
+                <ul className="list-disc list-inside">
+                  {profileData.projects.map((project, index) => (
+                    <motion.li
+                      key={index}
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <strong>{project.title}:</strong> {project.description}
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
